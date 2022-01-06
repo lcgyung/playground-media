@@ -9,9 +9,11 @@ const convertToRole = () => (process.env.REACT_APP_ROLE ? Number(process.env.REA
 const convertToPw = () => (process.env.REACT_APP_PW ? process.env.REACT_APP_PW : '');
 const convertToName = () => (process.env.REACT_APP_NAME ? process.env.REACT_APP_NAME : '');
 const convertToEmail = () => (process.env.REACT_APP_EMAIL ? process.env.REACT_APP_EMAIL : '');
+const convertToApiKey = () => (process.env.REACT_APP_API_KEY ? process.env.REACT_APP_API_KEY : '');
+const convertToApiSecret = () => (process.env.REACT_APP_API_SECRET ? process.env.REACT_APP_API_SECRET : '');
 
-const API_KEY = process.env.REACT_APP_API_KEY;
-const API_SECRET = process.env.REACT_APP_API_SECRET;
+const API_KEY = convertToApiKey();
+const API_SECRET = convertToApiSecret();
 const MEETING_NUMBER = convertToMeetingNumber();
 const ROLE = convertToRole();
 const PASS_WORD = convertToPw();
