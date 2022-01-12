@@ -4,12 +4,6 @@ import 'plyr-react/dist/plyr.css';
 
 const SamplePlyr = () => {
 	const ref = useRef<APITypes>(null);
-	useEffect(() => {
-		console.log('1 : ', ref.current);
-		if (ref.current?.plyr as Plyr) {
-			console.log('2 : ', ref.current?.plyr as Plyr);
-		}
-	}, [ref.current?.plyr as Plyr]);
 	return (
 		<Plyr
 			ref={ref}
@@ -18,14 +12,14 @@ const SamplePlyr = () => {
 				title: 'Example title',
 				sources: [
 					{
-						src: '/sample-small.mp4',
+						src: 'https://kpec2-dlacc.myskcdn.net/lecture/lecss3-1.mov',
 						type: 'video/mp4',
 						size: 1024,
 					},
 				],
 			}}
 			options={{
-				controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
+				controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
 				autoplay: true,
 				invertTime: true,
 			}}
