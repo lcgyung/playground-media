@@ -1,41 +1,35 @@
-import React, { FC, useRef, useEffect } from 'react';
+/* eslint-disable jsx-a11y/media-has-caption */
+/* eslint-disable no-multi-assign */
+import React, { FC, useRef, useEffect, KeyboardEvent } from 'react';
 import videojs, { VideoJsPlayer, VideoJsPlayerOptions } from 'video.js';
-import hotkeys from 'videojs-hotkeys';
 
 // Styles
 import 'video.js/dist/video-js.css';
+import './player.css';
 
 interface IVideoPlayerProps {
-	options: VideoJsPlayerOptions;
-	onReady?: (player: VideoJsPlayer) => void;
+	sources: videojs.Tech.SourceObject[];
 }
 
-const PLAYER_OPTION = {
-	seekStep: 5,
-	volumeStep: 0.1,
+const CUSTOM_OPTION = {
+	VOLUME_STEP: 0.1,
+	SEEK_STEP: 5,
 };
 
-const initialOptions: videojs.PlayerOptions = {
+const options: VideoJsPlayerOptions = {
 	autoplay: true,
-	preload: 'autt',
-	bigPlayButton: true,
 	controls: true,
 	controlBar: {
 		pictureInPictureToggle: false,
-		descriptionsButton: true,
-		volumePanel: {
-			inline: false,
-		},
 	},
-	plugins: {
-		hotkeys,
-	},
-	userActions: {
-		hotkeys: true,
-	},
+	responsive: true,
+	fluid: true,
+	muted: true,
 };
 
-const VideoPlayer: FC<IVideoPlayerProps> = ({ options, onReady }) => {
+// TODO : 이전 시청 이력 반영 > ready
+const VideoPlayer: FC<IVideoPlayerProps> = ({ sources }) => {
+	const supposedCurrentTime = useRef<number>(0);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const playerRef = useRef<VideoJsPlayer>();
 
@@ -45,21 +39,23 @@ const VideoPlayer: FC<IVideoPlayerProps> = ({ options, onReady }) => {
 			const videoElement = videoRef.current;
 			if (!videoElement) return;
 
-			const player = (playerRef.current = videojs(videoElement, options, () => {
-				console.log('player is ready');
-				onReady && onReady(player);
+			const player = (playerRef.current = videojs(videoElement, { ...options, sources }, () => {
+				player.on('timeupdate', () => handleTimeUpdate(player));
+				player.on('seeking', () => handleSeeking(player));
+				player.on('focusout', () => handleFocusOut(player));
+				player.on('keydown', (e) => handleKeyDown(e, player));
 			}));
-		} else {
-			// you can update player here [update player through props]
-			// const player = playerRef.current;
-			// player.autoplay(options.autoplay);
-			// player.src(options.sources);
 		}
-	}, [options, videoRef]);
+	}, [sources, videoRef]);
 
 	// Dispose the Video.js player when the functional component unmounts
 	useEffect(() => {
 		const player = playerRef.current;
+
+		if (player) {
+			player.focus();
+			player.muted(false);
+		}
 
 		return () => {
 			if (player) {
@@ -69,34 +65,56 @@ const VideoPlayer: FC<IVideoPlayerProps> = ({ options, onReady }) => {
 		};
 	}, [playerRef]);
 
-	// useEffect(() => {
-	// 	if (videoRef.current) {
-	// 		player.current = videojs(videoRef.current, {
-	// 			...initialOptions,
-	// 			sources,
-	// 		});
-	// 	}
-	// 	return () => {
-	// 		if (player.current) {
-	// 			player.current.dispose();
-	// 		}
-	// 	};
-	// }, [sources]);
+	const handleTimeUpdate = (player: VideoJsPlayer) => {
+		if (!player.seeking()) {
+			supposedCurrentTime.current = player.currentTime();
+		}
+	};
 
-	// useEffect(() => {
-	// 	if (player.current) {
-	// 		player.current.ready(function () {
-	// 			this.hotkeys({
-	// 				volumeStep: PLAYER_OPTION.volumeStep,
-	// 				seekStep: PLAYER_OPTION.seekStep,
-	// 			});
-	// 		});
-	// 	}
-	// }, [player]);
+	const handleSeeking = (player: VideoJsPlayer) => {
+		const currentTime = player.currentTime();
+		const prevTime = supposedCurrentTime.current;
+		if (currentTime > prevTime) {
+			player.currentTime(prevTime);
+		}
+	};
+
+	const handleFocusOut = (player: VideoJsPlayer) => {
+		player.focus();
+	};
+
+	const handleKeyDown = (e: KeyboardEvent, player: VideoJsPlayer) => {
+		switch (e.code) {
+			case 'Space':
+				if (player.paused()) {
+					player.play();
+				} else {
+					player.pause();
+				}
+				break;
+			case 'Enter':
+				if (player.isFullscreen()) {
+					player.exitFullscreen();
+				} else {
+					player.requestFullscreen();
+				}
+				break;
+			case 'ArrowLeft':
+				player.currentTime(player.currentTime() - CUSTOM_OPTION.SEEK_STEP);
+				break;
+			case 'ArrowDown':
+				player.volume(player.volume() - CUSTOM_OPTION.VOLUME_STEP);
+				break;
+			case 'ArrowUp':
+				player.volume(player.volume() + CUSTOM_OPTION.VOLUME_STEP);
+				break;
+			default:
+		}
+	};
 
 	return (
 		<div data-vjs-player>
-			<video ref={videoRef} className="video-js vjs-big-play-centered" autoPlay />;
+			<video ref={videoRef} className="video-js vjs-big-play-centered" />
 		</div>
 	);
 };
